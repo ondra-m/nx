@@ -1,10 +1,25 @@
+extern crate flate2;
+
 use std::io::{BufReader, Result, stdout};
 use std::io::prelude::*;
 use std::fs::File;
 use std::env::{args};
 use std::collections::HashMap;
-// use std::process;
+use flate2::read::GzDecoder;
 
+fn fastq_file_decoder(path: &String) -> Box<Read> {
+  let file = File::open(path).expect("Cannot open a file");
+
+  if path.ends_with(".fastq.gz") {
+    Box::new(GzDecoder::new(file))
+  }
+  else if path.ends_with(".fastq") {
+    Box::new(file)
+  }
+  else {
+    panic!("Unknow fastq format");
+  }
+}
 
 fn main() -> Result<()> {
   let fastq_file = args().nth(1).expect("No fastq were given");
@@ -15,10 +30,7 @@ fn main() -> Result<()> {
   println!("bucket_count = {}", bucket_count);
   println!("bucket_by = {}", bucket_by);
 
-  // process::exit(0x0100);
-
-  let file = File::open(fastq_file)?;
-  let file = BufReader::new(file);
+  let reader = BufReader::new(fastq_file_decoder(&fastq_file));
 
   let mut all_sizes_counts: HashMap<u64, u64> = HashMap::new();
 
@@ -26,7 +38,7 @@ fn main() -> Result<()> {
   //
   let mut block = 0;
   let mut line_index: u32 = 0;
-  for line in file.lines() {
+  for line in reader.lines() {
     if block == 1 {
       let size = line?.len();
       let counter = all_sizes_counts.entry(size as u64).or_insert(0);
@@ -103,39 +115,6 @@ fn main() -> Result<()> {
       break;
     }
   }
-
-  // let mut block = 0;
-  // let mut buf = Vec::<u8>::new();
-  // while file.read_until(b'\n', &mut buf).expect("read_until failed") != 0 {
-  //   if block == 1 {
-  //     // this moves the ownership of the read data to s
-  //     // there is no allocation
-  //     // let s = String::from_utf8(buf).expect("from_utf8 failed");
-  //     // for c in s.chars() {
-  //     //   println!("Character: {}", c);
-  //     // }
-
-  //     println!("1");
-
-  //     // this returns the ownership of the read data to buf
-  //     // there is no allocation
-  //     // buf = s.into_bytes();
-  //   }
-  //     // buf.clear();
-
-  //   block = (block + 1) % 4;
-  // }
-
-  // // let mut byte_vec: Vec<u8> = Vec::new();
-  // loop {
-  //   let mut buf = vec![];
-  //   let my_bytes = file.read_until(b'\n', &mut buf)?;
-  //   if my_bytes == 0 { break };
-
-  //   // println!("{:?}", buf);
-  //   println!("{}", buf.len());
-  // }
-
 
   Ok(())
 }
