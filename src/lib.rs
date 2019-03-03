@@ -6,10 +6,10 @@ use std::fs::File;
 use std::collections::HashMap;
 use flate2::read::GzDecoder;
 
-struct NxResult {
-  index: u8,
-  n_result: u64,
-  total_length: u128,
+pub struct NxResult {
+  pub index: u8,
+  pub n_result: u64,
+  pub total_length: u128,
 }
 
 fn file_decoder(path: &String) -> Box<Read> {
@@ -116,7 +116,7 @@ fn calc_result(nx_results: &mut Vec<NxResult>, bucket_count: u8, bucket_by: u8, 
   }
 }
 
-pub fn run(fastq_file: String, bucket_count: u8) -> Result<()> {
+pub fn run(fastq_file: String, bucket_count: u8) -> Vec<NxResult> {
   let bucket_by: u8 = 100 / bucket_count;
 
   println!("Fastq = {}", fastq_file);
@@ -144,8 +144,13 @@ pub fn run(fastq_file: String, bucket_count: u8) -> Result<()> {
   calc_result(&mut nx_results, bucket_count, bucket_by, total_length, &all_length_counts);
 
   nx_results.sort_by_key(|r| r.index );
+  nx_results
+}
 
-  for result in nx_results {
+pub fn run_and_print(fastq_file: String, bucket_count: u8) -> Result<()> {
+  let nx_results = run(fastq_file, bucket_count);
+
+  for result in &nx_results {
     println!("N{} = {:?} (at {})", result.index, result.n_result, result.total_length);
   }
 
