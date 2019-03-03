@@ -47,7 +47,7 @@ fn parse_file(path: &String, all_length_counts: &mut HashMap<u64, u64>) {
     block = (block + 1) % 4;
   }
 
-  println!("Reads = {}       ", read_index);
+  println!("\rReads = {}       ", read_index);
 }
 
 fn calc_total_length(total_length: &mut u128, all_length_counts: &mut HashMap<u64, u64>) {
