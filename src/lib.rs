@@ -9,6 +9,7 @@ use glob::glob;
 pub struct NxResult {
   pub index: u8,
   pub n_result: u64,
+  pub l_result: u64,
   pub total_length: u128,
 }
 
@@ -105,14 +106,18 @@ fn calc_result(nx_results: &mut Vec<NxResult>, bucket_count: u8, bucket_by: u8, 
   all_sorted_lengths.reverse();
 
   let mut tmp_total_length: u128 = 0;
+  let mut tmp_total_count: u64 = 0;
   let mut indexes_to_remove: Vec<u8> = vec![];
 
   for length in &all_sorted_lengths {
     tmp_total_length += (length * all_length_counts[length]) as u128;
+    tmp_total_count += all_length_counts[length];
 
     for (index, limit) in &bucket_lengths_to_resolve {
       if tmp_total_length > *limit {
         let stat_index = bucket_by * index;
+
+        tmp_total_count - (tmp_total_length - *limit) / length;
 
         nx_results.push(NxResult {
           index: stat_index,
