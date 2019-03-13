@@ -7,3 +7,4 @@ edition = "2018"
 [dependencies]
 flate2 = "1.0"
 bzip2 = "0.3.2"
+glob = "0.3.0"

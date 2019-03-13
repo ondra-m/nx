@@ -1,11 +1,10 @@
-extern crate flate2;
-
 use std::io::{BufReader, Result, stdout};
 use std::io::prelude::*;
 use std::fs::File;
 use std::collections::HashMap;
 use flate2::read::GzDecoder;
 use bzip2::read::BzDecoder;
+use glob::glob;
 
 pub struct NxResult {
   pub index: u8,
@@ -30,28 +29,47 @@ fn file_decoder(path: &String) -> Box<Read> {
   }
 }
 
-fn parse_file(path: &String, all_length_counts: &mut HashMap<u64, u64>) {
-  let reader = BufReader::new(file_decoder(&path));
+fn parse_files(fastq_files_globs: Vec<String>, all_length_counts: &mut HashMap<u64, u64>) {
+  let mut fastq_files: Vec<String> = vec![];
 
-  let mut block = 0;
-  let mut read_index: u32 = 0;
-  for line in reader.lines() {
-    if block == 1 {
-      let length = line.expect("line").len();
-      let counter = all_length_counts.entry(length as u64).or_insert(0);
-      *counter += 1;
-
-      read_index += 1;
-      if read_index % 100000 == 0 {
-        print!("\r  read_index = {}", read_index);
-        stdout().flush().unwrap();
+  for files_glob in &fastq_files_globs {
+    for entry in glob(files_glob).expect("Failed to read glob pattern") {
+      match entry {
+        Err(e) => println!("{:?}", e),
+        Ok(path) => fastq_files.push(path.display().to_string()),
       }
     }
-
-    block = (block + 1) % 4;
   }
 
-  println!("\rReads = {}       ", read_index);
+  let mut file_index = 0;
+
+  for path in &fastq_files {
+    file_index += 1;
+    println!("[{}/{}] {} ", file_index, fastq_files.len(), path);
+
+    let mut read_index: u64 = 0;
+    let reader = BufReader::new(file_decoder(&path));
+
+    let mut block = 0;
+    for line in reader.lines() {
+      if block == 1 {
+        let length = line.expect("line").len();
+        let counter = all_length_counts.entry(length as u64).or_insert(0);
+        *counter += 1;
+
+        read_index += 1;
+        if read_index % 100000 == 0 {
+          print!("\r  read_index = {}", read_index);
+          stdout().flush().unwrap();
+        }
+      }
+
+      block = (block + 1) % 4;
+    }
+
+    println!("\r  reads = {}\x1b[0K", read_index);
+  }
+
 }
 
 fn calc_total_length(total_length: &mut u128, all_length_counts: &mut HashMap<u64, u64>) {
@@ -120,18 +138,19 @@ fn calc_result(nx_results: &mut Vec<NxResult>, bucket_count: u8, bucket_by: u8, 
   }
 }
 
-pub fn run(fastq_file: String, bucket_count: u8) -> Vec<NxResult> {
+pub fn run(fastq_files_globs: Vec<String>, bucket_count: u8) -> Vec<NxResult> {
   let bucket_by: u8 = 100 / bucket_count;
 
-  println!("Fastq = {}", fastq_file);
   println!("Bucket count = {}", bucket_count);
   println!("Bucket by = {}", bucket_by);
+  println!("");
 
   // Load lengths and their counts from fastqfile
   //
   let mut all_length_counts: HashMap<u64, u64> = HashMap::new();
   //
-  parse_file(&fastq_file, &mut all_length_counts);
+  parse_files(fastq_files_globs, &mut all_length_counts);
+  println!("");
 
   // Full sequence lenght
   // Sum of lenghts of all reads
@@ -151,8 +170,8 @@ pub fn run(fastq_file: String, bucket_count: u8) -> Vec<NxResult> {
   nx_results
 }
 
-pub fn run_and_print(fastq_file: String, bucket_count: u8) -> Result<()> {
-  let nx_results = run(fastq_file, bucket_count);
+pub fn run_and_print(fastq_files_globs: Vec<String>, bucket_count: u8) -> Result<()> {
+  let nx_results = run(fastq_files_globs, bucket_count);
 
   for result in &nx_results {
     println!("N{} = {:?} (at {})", result.index, result.n_result, result.total_length);
