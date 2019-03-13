@@ -5,6 +5,7 @@ use std::io::prelude::*;
 use std::fs::File;
 use std::collections::HashMap;
 use flate2::read::GzDecoder;
+use bzip2::read::BzDecoder;
 
 pub struct NxResult {
   pub index: u8,
@@ -17,6 +18,9 @@ fn file_decoder(path: &String) -> Box<Read> {
 
   if path.ends_with(".fastq.gz") {
     Box::new(GzDecoder::new(file))
+  }
+  else if path.ends_with(".fastq.bz2") {
+    Box::new(BzDecoder::new(file))
   }
   else if path.ends_with(".fastq") {
     Box::new(file)
