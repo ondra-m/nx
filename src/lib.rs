@@ -116,12 +116,25 @@ fn calc_result(nx_results: &mut Vec<NxResult>, bucket_count: u8, bucket_by: u8, 
     for (index, limit) in &bucket_lengths_to_resolve {
       if tmp_total_length > *limit {
         let stat_index = bucket_by * index;
+        let mut count_for_l_result: u64 = 0;
 
-        tmp_total_count - (tmp_total_length - *limit) / length;
+        loop {
+          count_for_l_result += 1;
+
+          if (tmp_total_length - ((length * count_for_l_result) as u128)) < *limit {
+            count_for_l_result -= 1;
+            break;
+          }
+
+          if count_for_l_result > all_length_counts[length] {
+            panic!("count_for_l_result cannot be higher than all_length_counts[length]");
+          }
+        }
 
         nx_results.push(NxResult {
           index: stat_index,
           n_result: *length,
+          l_result: (tmp_total_count - count_for_l_result),
           total_length: tmp_total_length,
         });
 
@@ -179,7 +192,13 @@ pub fn run_and_print(fastq_files_globs: Vec<String>, bucket_count: u8) -> Result
   let nx_results = run(fastq_files_globs, bucket_count);
 
   for result in &nx_results {
-    println!("N{} = {:?} (at {})", result.index, result.n_result, result.total_length);
+    println!("N{} = {} (at {})", result.index, result.n_result, result.total_length);
+  }
+
+  println!("");
+
+  for result in &nx_results {
+    println!("L{} = {} (at {})", result.index, result.l_result, result.total_length);
   }
 
   Ok(())
