@@ -30,6 +30,13 @@ fn test_2_buckets() {
   assert_eq!(results4[0].n_result, 50);
   assert_eq!(results5[0].n_result, 50);
   assert_eq!(results6[0].n_result, 50);
+
+  assert_eq!(results1[0].l_result, 2);
+  assert_eq!(results2[0].l_result, 2);
+  assert_eq!(results3[0].l_result, 2);
+  assert_eq!(results4[0].l_result, 3);
+  assert_eq!(results5[0].l_result, 3);
+  assert_eq!(results6[0].l_result, 3);
 }
 
 #[test]
@@ -65,6 +72,24 @@ fn test_3_bucket() {
 
   assert_eq!(results6[0].n_result, 70);
   assert_eq!(results6[1].n_result, 40);
+
+  assert_eq!(results1[0].l_result, 2);
+  assert_eq!(results1[1].l_result, 3);
+
+  assert_eq!(results2[0].l_result, 2);
+  assert_eq!(results2[1].l_result, 3);
+
+  assert_eq!(results3[0].l_result, 2);
+  assert_eq!(results3[1].l_result, 3);
+
+  assert_eq!(results4[0].l_result, 2);
+  assert_eq!(results4[1].l_result, 4);
+
+  assert_eq!(results5[0].l_result, 2);
+  assert_eq!(results5[1].l_result, 4);
+
+  assert_eq!(results6[0].l_result, 2);
+  assert_eq!(results6[1].l_result, 4);
 }
 
 #[test]
@@ -77,4 +102,9 @@ fn test_glob() {
   assert_eq!(results[1].n_result, 70);
   assert_eq!(results[2].n_result, 50);
   assert_eq!(results[3].n_result, 40);
+
+  assert_eq!(results[0].l_result, 2);
+  assert_eq!(results[1].l_result, 4);
+  assert_eq!(results[2].l_result, 6);
+  assert_eq!(results[3].l_result, 8);
 }
